@@ -2,18 +2,17 @@ package controllers
 
 import javax.inject._
 
-import play.api._
+import org.apache.commons.lang3.StringUtils
 import play.api.mvc._
-import services.{FileService, LineReader}
+import services.LineReader
 
 @Singleton
 class LineController @Inject()(lineReader: LineReader) extends Controller {
 
-  def getLine(n: Long) = Action {
-    if (n <= 0) {
-      BadRequest("invalid line number")
-    } else {
-      lineReader.getLine(n).map(l => Ok(l)).getOrElse(Status(REQUEST_ENTITY_TOO_LARGE))
-    }
+  def getLine(n: Int) = Action {
+    lineReader.getLine(n).fold(
+      e => Status(e.code),
+      s => Ok(StringUtils.appendIfMissing(s, "\n"))
+    )
   }
 }

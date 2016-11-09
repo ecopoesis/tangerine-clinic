@@ -1,1 +1,1 @@
-GET     /lines/:n                   controllers.LineController.getLine(n: Long)
+GET     /lines/:n                   controllers.LineController.getLine(n: Int)
