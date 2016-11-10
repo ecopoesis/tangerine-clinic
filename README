@@ -1,49 +1,16 @@
-This is your new Play application
-=================================
+#Tangerine Clinic
 
-This file will be packaged with your application when using `activator dist`.
+This is an implementation of the Line Server described at https://salsify.github.io/line-server.html
 
-There are several demonstration files available in this template.
+This is a Scala/Play Framework application. If you have Java installed, you should be able to run `activator` to get to the SBT prompt.
 
-Controllers
-===========
+##Design
 
-- HomeController.scala:
+Rather then try to keep all of the source file in memory, Tangerine Clinic uses the Java [Scanner](https://docs.oracle.com/javase/8/docs/api/java/util/Scanner.html) class to build an index of the location of all lines. This index is kept as a simple Scala sequence. For loading the actual lines, it uses Java NIO to open a [FileChannel](https://docs.oracle.com/javase/8/docs/api/java/nio/channels/FileChannel.html) and memory map the files. Memory mapping the file is slightly more expensive then using JVM native IO (mostly because of the additional page faults), but has the advantage of not needing to load the entire file into memory.
 
-  Shows how to handle simple HTTP requests.
+The rest of the design is just a basic Play application. IoC (via Guice) is used to make unit testing simpler.
 
-- AsyncController.scala:
+##Performance
+File size will only affect startup performance while the source file is scanned for line endings. Startup time will scale linearly with file size. Heap size limits
 
-  Shows how to do asynchronous programming when handling a request.
-
-- CountController.scala:
-
-  Shows how to inject a component into a controller and use the component when
-  handling requests.
-
-Components
-==========
-
-- Module.scala:
-
-  Shows how to use Guice to bind all the components needed by your application.
-
-- Counter.scala:
-
-  An example of a component that contains state, in this case a simple counter.
-
-- ApplicationTimer.scala:
-
-  An example of a component that starts when the application starts and stops
-  when the application stops.
-
-Filters
-=======
-
-- Filters.scala:
-
-  Creates the list of HTTP filters used by your application.
-
-- ExampleFilter.scala
-
-  A simple filter that adds a header to every response.
+Since the JVM is deferring to OS for IO, the memory-mapped regions are allocated off-heap.

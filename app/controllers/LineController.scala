@@ -9,7 +9,7 @@ import services.LineReader
 @Singleton
 class LineController @Inject()(lineReader: LineReader) extends Controller {
 
-  def getLine(n: Int) = Action {
+  def getLine(n: Long) = Action {
     lineReader.getLine(n).fold(
       e => Status(e.code),
       s => Ok(StringUtils.appendIfMissing(s, "\n"))
