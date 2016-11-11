@@ -3,7 +3,7 @@ package collections
 import scala.collection.mutable
 
 class HugeList[T](bucketSize: Int = Int.MaxValue) {
-  var parent = scala.collection.mutable.Buffer[scala.collection.mutable.Buffer[T]]()
+  var parent = mutable.ArrayBuffer[scala.collection.mutable.Buffer[T]]()
 
   def apply(i: Long): T = get(i)
 
@@ -25,7 +25,7 @@ class HugeList[T](bucketSize: Int = Int.MaxValue) {
 
   def add(o: T) = {
     if (parent.isEmpty || parent.last.size == bucketSize) {
-      parent += mutable.Buffer[T]()
+      parent += mutable.ArrayBuffer[T]()
     }
     parent.last += o
   }
