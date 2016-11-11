@@ -10,7 +10,7 @@ To run, run `./run.s <path-to-file-to-serve>`
 
 ##Design
 
-Rather then try to keep all of the source file in memory, Tangerine Clinic uses Java NIO to open a [FileChannel](https://docs.oracle.com/javase/8/docs/api/java/nio/channels/FileChannel.html) that is looped through to find the indexes of all newlines. If only small files needed to be supported, this index could be kept in a Scala Seq, but since Seq is a Java Array under the hood, it's limited to 2e31 entries. The spec asks about 100 gig files, and it seems reasonable that they may have more lines then that. Instead a Map[Long, Long] is used, which trades memory for expanded functionality. For loading the actual lines, again Java NIO is used to memory map the files. Memory mapping the file is slightly more expensive then using JVM IO (mostly because of the additional page faults), but has the advantage of not needing to load the entire file into memory.
+Rather then try to keep all of the source file in memory, Tangerine Clinic uses Java NIO to open a [FileChannel](https://docs.oracle.com/javase/8/docs/api/java/nio/channels/FileChannel.html) that is looped through to find the indexes of all newlines. If only small files needed to be supported, this index could be kept in a Scala Seq, but since Seq is a Java Array under the hood, it's limited to 2^31 entries. The spec asks about 100 gig files, and it seems reasonable that they may have more lines then that. Instead a Map[Long, Long] is used, which trades memory for expanded functionality. For loading the actual lines, again Java NIO is used to memory map the files. Memory mapping the file is slightly more expensive then using JVM IO (mostly because of the additional page faults), but has the advantage of not needing to load the entire file into memory.
 
 The rest of the design is just a basic Play application. IoC (via Guice) is used to make unit testing simpler.
 
@@ -26,7 +26,7 @@ This project uses the Play Framework as its webframework. I chose the combinatio
 ##Time
 About 5 hours. A large portion of the was fighting Scala's lack of try-with-resources and trying to build my own version of it in a previous Seq based index version. 
 ###Improvements:
-* Figure out what's causing the obscene memory usage during indexing. My guess is that Scala's Map is pretty inefficient at memory usage. A possible solution would be a structure containing as many 2e31 length Seqs as we need to hold all the line indexes. This would eliminate a lot of object overhead, and still give us O(1) lookups.
+* Figure out what's causing the obscene memory usage during indexing. My guess is that Scala's Map is pretty inefficient at memory usage. A possible solution would be a structure containing as many 2^31 length Seqs as we need to hold all the line indexes. This would eliminate a lot of object overhead, and still give us O(1) lookups.
 * I would like to add would be to cache the index between server restarts. For a single server version, writing this data into a file on the local filesystem is probably the best way. If there were going to be multiple servers serving the same file, I would put this data into DB of some type, probably still loading all the index data into memory at startup.
 
 ##Criticism
