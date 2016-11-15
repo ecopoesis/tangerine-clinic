@@ -25,7 +25,7 @@ class HugeList[T](bucketSize: Int = Int.MaxValue) {
 
   def add(o: T) = {
     if (parent.isEmpty || parent.last.size == bucketSize) {
-      parent += mutable.ArrayBuffer[T]()
+      parent += new mutable.ArrayBuffer[T](bucketSize)
     }
     parent.last += o
   }

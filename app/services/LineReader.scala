@@ -4,6 +4,7 @@ import java.io.{File, FileInputStream, IOException}
 import java.nio.channels.FileChannel.MapMode._
 import javax.inject._
 
+import collections.HugeList
 import models._
 import play.api.Logger
 
@@ -59,7 +60,9 @@ class IndexedLineReader @Inject()(fileService: FileService) extends LineReader {
       val onePercent = fileSize / 100
       var workingPercent = onePercent
 
-      val indexMap = scala.collection.mutable.Map[Long, Long]()
+      // bucket size: in the Project Gutenberg corpus, avg line length is 52
+      // we'll set bucket size at 1/1000 the number of lines we think we'll have, so we don't waste too much memory
+      val indexList = HugeList[Long](Math.min(fileSize / 52 / 1000, Int.MaxValue).toInt)
 
       // we need to process the file in 2-gig chunks because of limitations in the Java memory map API
       var start = 0L
@@ -67,10 +70,8 @@ class IndexedLineReader @Inject()(fileService: FileService) extends LineReader {
       while (start < fileSize) {
         val chunkSize = if (start + Integer.MAX_VALUE > fileSize) fileSize - start else Integer.MAX_VALUE
         val buffer = inputstream.getChannel.map(READ_ONLY, start, chunkSize)
-        val prevLines = indexMap.size
 
         // Scala's for-comprehension's range only works on Ints, which limits us to 2 gig file, so instead we use an iterator
-        // we use a Map[Long, Long] instead of an Seq because Seq is a JVM Array and Array's use Int as an index, so we'd be limited to 2 billion lines
         Iterator
           .iterate(0L)(_ + 1L)
           .takeWhile(_ < chunkSize)
@@ -82,17 +83,12 @@ class IndexedLineReader @Inject()(fileService: FileService) extends LineReader {
             BytePos(pos, buffer.get())
           })
           .withFilter(bp => bp.pos == 0 || bp.byte == newline)
-          .zipWithIndex.foldLeft(indexMap) {
-          // 0 is the correct starting location of the first line, but additional lines need to have their starting location incremented by one since we matched newlines
-          // z._2 is the index, z._1 is the BytePos
-          (m, z) => m(z._2 + prevLines) = if (z._1.pos == 0) z._1.pos else z._1.pos + 1
-            m
-        }
+          .foreach(bp => indexList.add(bp.pos))
 
         start += chunkSize
       }
 
-      Right(indexMap)
+      Right(indexList)
     } catch {
       case ioe: IOException => Left(ioe)
     }
